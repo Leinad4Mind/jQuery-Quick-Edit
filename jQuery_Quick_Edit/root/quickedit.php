@@ -178,10 +178,10 @@ switch($mode)
 		}
 		
 		// HTML, BBCode, Smilies, Images and Flash status
-		$bbcode_status	= ($config['allow_bbcode'] && ($auth->acl_get('f_bbcode', $post_data['forum_id']) || $post_data['forum_id'] == 0)) ? true : false;
-		$smilies_status	= ($bbcode_status && $config['allow_smilies'] && $auth->acl_get('f_smilies', $post_data['forum_id'])) ? true : false;
-		$img_status		= ($bbcode_status && $auth->acl_get('f_img', $post_data['forum_id'])) ? true : false;
-		$url_status		= ($config['allow_post_links']) ? true : false;
+		$bbcode_status	= ($config['allow_bbcode'] && ($auth->acl_get('f_bbcode', $post_data['forum_id']) || $post_data['forum_id'] == 0) && $post_data['enable_bbcode']) ? true : false;
+		$smilies_status	= ($bbcode_status && $config['allow_smilies'] && $auth->acl_get('f_smilies', $post_data['forum_id']) && $post_data['enable_smilies']) ? true : false;
+		$img_status	= ($bbcode_status && $auth->acl_get('f_img', $post_data['forum_id'])) ? true : false;
+		$url_status	= ($config['allow_post_links'] && $post_data['enable_magic_url']) ? true : false;
 		$flash_status	= ($bbcode_status && $auth->acl_get('f_flash', $post_data['forum_id']) && $config['allow_post_flash']) ? true : false;
 		$quote_status	= ($auth->acl_get('f_reply', $post_data['forum_id'])) ? true : false;
 		
@@ -302,6 +302,7 @@ switch($mode)
 		    'icon_id'           	=> $post_data['post_icon_id'],
 		    'post_id'			=> $post_data['post_id'],
 		    'poster_id'			=> $post_data['poster_id'],
+			'poster_colour'         => $post_data['user_colour'],
 		    'topic_replies'		=> $post_data['topic_replies'],
 		    'topic_replies_real'	=> $post_data['topic_replies_real'],
 		    'topic_first_post_id'	=> $post_data['topic_first_post_id'],
@@ -309,6 +310,7 @@ switch($mode)
 		    'post_edit_user'		=> $edit_user,
 		    'forum_parents'		=> $post_data['forum_parents'],
 		    'forum_name'		=> $post_data['forum_name'],
+		    'topic_poster'		=> $post_data['topic_poster'],
 		
 		    // Defining Post Options
 		    'enable_bbcode' 	=> $post_data['enable_bbcode'],
@@ -349,7 +351,7 @@ switch($mode)
 
 		$poll = array(
 		    'poll_title'	=> $post_data['poll_title'],
-		    'poll_length'	=> $post_data['poll_length'],
+		    'poll_length'	=> (!empty($post_data['poll_length'])) ? (int) $post_data['poll_length'] / 86400 : 0, 
 		    'poll_start'	=> $post_data['poll_start'],
 		    'poll_max_options'	=> $post_data['poll_max_options'],
 		    'poll_vote_change'	=> $post_data['poll_vote_change'],
@@ -492,7 +494,7 @@ switch($mode)
 			* $mode is always edit as we just edit a post with this MOD
 			* $username is set to $user->data['username'] as we don't need the clean username for the logs
 			*/
-			submit_post('edit', $post_data['post_subject'], $user->data['username'], $post_data['topic_type'], $poll, $data);
+			submit_post('edit', $post_data['post_subject'], $post_data['username'], $post_data['topic_type'], $poll, $data);
 			echo($return); // this is needed in order to send the info back to the javascript backend
 		}
 		else
@@ -640,7 +642,7 @@ switch($mode)
 			
 			$template->assign_vars(array(
 				'U_ADVANCED_EDIT' 	=> append_sid("{$phpbb_root_path}posting.$phpEx", 'mode=edit&amp;f=' . $forum_id . "&amp;t={$row['topic_id']}&amp;p={$row['post_id']}"),
-				'S_HIDDEN_FIELDS' 	=> $s_hidden_fields,
+				//'S_HIDDEN_FIELDS' 	=> $s_hidden_fields,
 			));
 		}
 		
